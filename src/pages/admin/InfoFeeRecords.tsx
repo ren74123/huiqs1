@@ -152,6 +152,7 @@ export function InfoFeeRecords() {
           user:profiles!credit_transactions_user_id_fkey (
             full_name,
             phone,
+            username,
             email
           )
         `)

@@ -103,8 +103,11 @@ serve(async (req) => {
     const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
 
     if (authError) {
+      console.error("Error fetching users from auth:", authError);
       return new Response(
-        JSON.stringify({ error: "Error fetching users" }),
+        JSON.stringify({ 
+          error: `Error fetching users: ${authError.message || 'Unknown error'}` 
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -118,8 +121,11 @@ serve(async (req) => {
       .select("id, full_name, phone");
 
     if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
       return new Response(
-        JSON.stringify({ error: "Error fetching profiles" }),
+        JSON.stringify({ 
+          error: `Error fetching profiles: ${profilesError.message || 'Unknown error'}` 
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -156,7 +162,9 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ 
+        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

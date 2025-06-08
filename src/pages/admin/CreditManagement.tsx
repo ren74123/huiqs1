@@ -60,7 +60,18 @@ export function CreditManagement() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        // Parse the error response to get specific error details
+        let errorMessage = 'Failed to fetch users';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (parseError) {
+          // If we can't parse the response, use the status text
+          errorMessage = `Failed to fetch users: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const { users: authUsers } = await response.json();
@@ -90,7 +101,8 @@ export function CreditManagement() {
       setSearchResults(formattedResults);
     } catch (error) {
       console.error('Error searching users:', error);
-      setError('搜索用户失败，请重试');
+      // Display the specific error message from the server
+      setError(error instanceof Error ? error.message : '搜索用户失败，请重试');
     } finally {
       setLoading(false);
     }

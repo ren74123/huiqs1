@@ -9,6 +9,7 @@ interface User {
   full_name: string;
   email?: string;
   phone: string;
+  username?: string; // Added username field
   user_role: string;
 }
 
@@ -68,7 +69,7 @@ export function CreditManagement() {
       // Get profiles for the matched users
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, phone, user_role')
+        .select('id, full_name, phone, user_role, username') // Added username to the select query
         .in('id', authUsers.map(u => u.id));
 
       if (profilesError) throw profilesError;
@@ -79,6 +80,7 @@ export function CreditManagement() {
           id: authUser.id,
           full_name: '未设置昵称',
           phone: '',
+          username: '', // Include empty username as default
           user_role: 'user'
         };
         return {
@@ -194,7 +196,7 @@ export function CreditManagement() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="搜索用户（邮箱、昵称或手机号）"
+                  placeholder="搜索用户（邮箱、昵称、用户名或手机号）"
                   className="pl-10 w-full rounded-lg border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#F52E6B] focus:border-transparent"
                 />
               </div>
@@ -221,7 +223,8 @@ export function CreditManagement() {
                       <p className="font-medium">{result.full_name || '未设置昵称'}</p>
                       <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
                         {result.email && <span className="mr-2">{result.email}</span>}
-                        {result.phone && <span>{result.phone}</span>}
+                        {result.phone && <span className="mr-2">{result.phone}</span>}
+                        {result.username && <span className="text-gray-600">@{result.username}</span>}
                       </div>
                     </div>
                     <button
@@ -262,7 +265,8 @@ export function CreditManagement() {
                   <h3 className="text-lg font-medium text-gray-900">{selectedUser.full_name || '未设置昵称'}</h3>
                   <div className="flex flex-col sm:flex-row sm:items-center text-gray-500">
                     {selectedUser.email && <span className="mr-2">{selectedUser.email}</span>}
-                    {selectedUser.phone && <span>{selectedUser.phone || '未绑定手机'}</span>}
+                    {selectedUser.phone && <span className="mr-2">{selectedUser.phone || '未绑定手机'}</span>}
+                    {selectedUser.username && <span className="text-gray-600">@{selectedUser.username}</span>}
                   </div>
                 </div>
                 <div className="mt-4 md:mt-0 flex items-center bg-[#F52E6B] bg-opacity-10 text-[#F52E6B] px-4 py-2 rounded-full">

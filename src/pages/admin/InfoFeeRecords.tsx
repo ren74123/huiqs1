@@ -231,7 +231,7 @@ export function InfoFeeRecords() {
         transaction.user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.user?.phone?.includes(searchTerm) ||
         transaction.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.user?.username?.toString().includes(searchTerm.toString()) ||
         transaction.remark?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }

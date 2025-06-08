@@ -29,27 +29,27 @@ serve(async (req) => {
       );
     }
 
-    // Create a Supabase client with the auth header
-    const supabaseClient = createClient(
+    // Create a Supabase client with the service role key for admin operations
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
         },
       }
     );
 
-    // Verify the user has admin access
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser();
+    // Extract the JWT token from the authorization header
+    const token = authHeader.replace("Bearer ", "");
 
-    if (!user) {
+    // Verify the JWT token and get user info
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({ error: "Invalid or expired token" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -58,7 +58,7 @@ serve(async (req) => {
     }
 
     // Get the user role from profiles
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
       .select("user_role")
       .eq("id", user.id)
@@ -86,18 +86,6 @@ serve(async (req) => {
         }
       );
     }
-
-    // Create a Supabase admin client
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
 
     // Search for users in auth.users
     const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();

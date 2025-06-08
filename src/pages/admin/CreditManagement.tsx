@@ -19,6 +19,7 @@ interface CreditTransaction {
   type: 'consume' | 'purchase';
   amount: number;
   remark: string;
+  username?: string;
   created_at: string;
 }
 

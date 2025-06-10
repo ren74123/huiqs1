@@ -439,7 +439,7 @@ export function TravelPlanPage() {
           >
             {loading ? (
               <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div className="bg-white h-2.5 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                <div className="bg-white h-2.5 rounded-full animate-pulse\" style={{ width: '100%' }}></div>
               </div>
             ) : (
               <div className="flex items-center justify-center">

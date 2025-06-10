@@ -1,4 +1,4 @@
-const COZE_API_KEY = 'pat_enLi8cdt3d1MQdPscAdebUqJfseqAS7Um8ttBJ8AW9xmTJRgd8JLX7ygEMqYTG8O';
+const COZE_API_KEY = 'pat_itf9Kfs9arz9O4SHWZJvldVBfQFFVFE58Nbtrk0M14Q9LsDMRxjNn5wVCu4xFg5r';
 const COZE_WORKFLOW_ID = '7491659032533729292';
 
 interface TravelPlanRequest {

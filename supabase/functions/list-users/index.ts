@@ -1,92 +1,162 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'npm:@supabase/supabase-js@2.38.1'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    // Get the authorization header from the request
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Create a Supabase client with the service role key for admin operations
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       {
         auth: {
           autoRefreshToken: false,
-          persistSession: false
-        }
+          persistSession: false,
+        },
       }
-    )
+    );
 
-    // Verify the request is from an admin
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new Error('Missing or invalid authorization header');
+    // Extract the JWT token from the authorization header
+    const token = authHeader.replace("Bearer ", "");
+
+    // Verify the JWT token and get user info
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    const token = authHeader.split(' ')[1];
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    
-    if (authError || !user) {
-      throw new Error('Invalid authorization token');
-    }
-
-    // Check if the user is an admin
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('user_role')
-      .eq('id', user.id)
+    // Get the user role from profiles
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("user_role")
+      .eq("id", user.id)
       .single();
 
-    if (profileError) {
-      throw new Error('Error fetching user profile');
+    if (profileError || profile?.user_role !== "admin") {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Admin access required" }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    if (profile.user_role !== 'admin') {
-      throw new Error('Only administrators can access this endpoint');
+    // Parse the request body
+    const { searchTerm } = await req.json();
+
+    if (!searchTerm || typeof searchTerm !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Search term is required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    const { searchTerm } = await req.json()
+    // Search for users in auth.users
+    const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
 
-    const { data: { users }, error } = await supabaseClient.auth.admin.listUsers()
-
-    if (error) {
-      throw error
+    if (authError) {
+      console.error("Error fetching users from auth:", authError);
+      return new Response(
+        JSON.stringify({ 
+          error: `Error fetching users: ${authError.message || 'Unknown error'}` 
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    let filteredUsers = users
-    if (searchTerm) {
-      filteredUsers = users.filter(user => 
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    // Get profiles to match with auth users
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, phone");
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      return new Response(
+        JSON.stringify({ 
+          error: `Error fetching profiles: ${profilesError.message || 'Unknown error'}` 
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
+
+    // Filter users based on search term
+    const filteredUsers = authUsers.users.filter((authUser) => {
+      const profile = profiles?.find((p) => p.id === authUser.id);
+      
+      // Search in email
+      const emailMatch = authUser.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Search in full_name
+      const nameMatch = profile?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Search in phone
+      const phoneMatch = profile?.phone?.includes(searchTerm);
+      
+      return emailMatch || nameMatch || phoneMatch;
+    });
+
+    // Limit to 10 results
+    const limitedUsers = filteredUsers.slice(0, 10);
 
     return new Response(
-      JSON.stringify({ users: filteredUsers }),
+      JSON.stringify({ users: limitedUsers }),
       {
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-        },
         status: 200,
-      },
-    )
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
-    console.error('Error in list-users function:', error)
+    console.error("Error:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An error occurred while fetching users',
-        details: error.toString()
+        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}` 
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
-      },
-    )
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
-})
+});

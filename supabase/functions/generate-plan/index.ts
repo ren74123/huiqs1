@@ -1,164 +1,155 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+};
+
+const COZE_API_KEY = Deno.env.get('COZE_API_KEY') || '';
+const COZE_WORKFLOW_ID = '7491659032533729292';
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  const headers = {
+    ...corsHeaders,
+    "Content-Type": "application/json"
+  };
+
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers });
   }
+
+  const start = Date.now();
 
   try {
-    const { from, to, date, days, preferences } = await req.json()
-
-    // Validate required parameters
-    if (!from || !to || !date || !days) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required parameters: from, to, date, days' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+    if (!COZE_API_KEY) {
+      throw new Error("Missing COZE_API_KEY environment variable");
     }
 
-    // Validate days is a positive number
-    if (typeof days !== 'number' || days <= 0 || days > 30) {
-      return new Response(
-        JSON.stringify({ error: 'Days must be a number between 1 and 30' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('Missing or invalid authorization header');
     }
 
-    // Generate travel plan text
-    const preferencesText = preferences && preferences.length > 0 
-      ? `，偏好：${preferences.join('、')}` 
-      : ''
+    const token = authHeader.split(' ')[1];
 
-    const planText = `
-# ${from} → ${to} ${days}天旅行计划
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') || '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    );
 
-## 行程概览
-**出发地：** ${from}
-**目的地：** ${to}
-**出发日期：** ${date}
-**行程天数：** ${days}天
-**旅行偏好：** ${preferences?.join('、') || '无特殊偏好'}
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      throw new Error('Invalid authorization token');
+    }
 
-## 详细行程安排
+    const requestBody = await req.json();
+    const { from, to, date, days, preferences } = requestBody;
 
-${generateDayByDayItinerary(from, to, days, preferences)}
+    if (!from || !to || !date || !days || !preferences || !Array.isArray(preferences)) {
+      throw new Error("缺少必需的请求参数");
+    }
 
-## 旅行贴士
-1. **交通建议：** 建议提前预订${from}到${to}的交通工具，可选择飞机、高铁或自驾
-2. **住宿推荐：** 根据预算选择合适的酒店，建议预订市中心或景区附近的住宿
-3. **美食推荐：** 不要错过当地特色美食和小吃
-4. **购物建议：** 可以购买当地特产作为纪念品
-5. **注意事项：** 关注天气变化，携带必要的衣物和用品
+    // Step 1: 发起 workflow 执行
+    const cozeRunRes = await fetch("https://api.coze.cn/v1/workflow/run", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${COZE_API_KEY}`
+      },
+      body: JSON.stringify({
+        workflow_id: COZE_WORKFLOW_ID,
+        parameters: { from, to, date, days, preferences }
+      })
+    });
 
-## 预算参考
-- **交通费用：** 根据选择的交通方式而定
-- **住宿费用：** 每晚200-800元不等
-- **餐饮费用：** 每人每天100-300元
-- **景点门票：** 根据具体景点而定
-- **购物娱乐：** 根据个人需求而定
+    if (!cozeRunRes.ok) {
+      const errorText = await cozeRunRes.text();
+      throw new Error(`Coze API run failed: ${cozeRunRes.status} - ${errorText}`);
+    }
 
-祝您旅途愉快！🎉
-    `.trim()
+    const runJson = await cozeRunRes.json();
+    console.log("🚀 Coze run response:", JSON.stringify(runJson));
 
-    return new Response(
-      JSON.stringify({ planText }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    const rawData = runJson.data;
+    let planText = '';
+    let executeId: string | null = null;
+
+    // 判断是同步返回结果 or 异步 execute_id
+    if (typeof rawData === 'string') {
+      const parsed = JSON.parse(rawData);
+      if (parsed.output && typeof parsed.output === 'string') {
+        planText = parsed.output;
       }
-    )
+    } else if (typeof rawData === 'object' && rawData.execute_id) {
+      executeId = rawData.execute_id;
+    }
+
+    // 如果是同步返回，直接返回 planText
+    if (planText) {
+      console.log("✅ 同步获取 planText 成功:", planText.substring(0, 100));
+      return new Response(JSON.stringify({ planText }), { headers });
+    }
+
+    // 否则进入轮询模式
+    if (!executeId) {
+      throw new Error("无法从 Coze 响应中获取 execute_id，也未直接返回 output");
+    }
+
+    console.log("⏳ Coze execute_id =", executeId);
+
+    // Step 2: 轮询获取执行状态
+    let retries = 0;
+    const maxRetries = 70;
+    const retryDelay = 1000; // 1s
+
+    while (retries < maxRetries) {
+      await new Promise(res => setTimeout(res, retryDelay));
+      retries++;
+
+      const statusRes = await fetch(`https://api.coze.cn/v1/workflow/status?execute_id=${executeId}`, {
+        headers: { "Authorization": `Bearer ${COZE_API_KEY}` }
+      });
+
+      if (!statusRes.ok) continue;
+
+      const statusJson = await statusRes.json();
+      console.log(`🔁 第 ${retries} 次轮询：`, JSON.stringify(statusJson));
+
+      if (statusJson.code !== 0) continue;
+
+      const status = statusJson.data?.status;
+
+      if (status === 'success') {
+        planText = statusJson.data?.outputs?.planText;
+        if (!planText) {
+          throw new Error("成功状态但未返回计划内容");
+        }
+        break;
+      }
+
+      if (status === 'failed') {
+        throw new Error("Coze workflow 执行失败");
+      }
+    }
+
+    if (!planText) {
+      throw new Error(`计划生成超时（尝试 ${maxRetries} 次）`);
+    }
+
+    console.log("✅ 异步获取 planText 成功:", planText.substring(0, 100));
+
+    return new Response(JSON.stringify({ planText }), { headers });
 
   } catch (error) {
-    console.error('Error generating travel plan:', error)
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    console.error("❌ 生成失败:", error);
+    const errorMessage = error instanceof Error ? error.message : "生成计划失败";
+    return new Response(JSON.stringify({
+      error: errorMessage,
+      planText: `生成行程时出现错误: ${errorMessage}`
+    }), {
+      headers,
+      status: 400
+    });
   }
-})
-
-function generateDayByDayItinerary(from: string, to: string, days: number, preferences: string[] = []): string {
-  let itinerary = ''
-  
-  for (let day = 1; day <= days; day++) {
-    itinerary += `### 第${day}天\n`
-    
-    if (day === 1) {
-      itinerary += `**上午：** 从${from}出发前往${to}\n`
-      itinerary += `**下午：** 抵达${to}，办理酒店入住，适应当地环境\n`
-      itinerary += `**晚上：** 在酒店附近用餐，早休息调整状态\n\n`
-    } else if (day === days && days > 1) {
-      itinerary += `**上午：** 最后的购物时光，购买特产和纪念品\n`
-      itinerary += `**下午：** 整理行李，前往机场/车站\n`
-      itinerary += `**晚上：** 返回${from}\n\n`
-    } else {
-      // 中间的天数根据偏好生成不同的活动
-      const activities = generateActivitiesForDay(day, preferences)
-      itinerary += `**上午：** ${activities.morning}\n`
-      itinerary += `**下午：** ${activities.afternoon}\n`
-      itinerary += `**晚上：** ${activities.evening}\n\n`
-    }
-  }
-  
-  return itinerary
-}
-
-function generateActivitiesForDay(day: number, preferences: string[] = []): {
-  morning: string
-  afternoon: string
-  evening: string
-} {
-  const hasFood = preferences.includes('美食探索')
-  const hasCulture = preferences.includes('文化体验')
-  const hasShopping = preferences.includes('购物')
-  const hasNature = preferences.includes('自然风光')
-  const hasHistory = preferences.includes('历史古迹')
-  const hasThemePark = preferences.includes('主题乐园')
-  const hasRelax = preferences.includes('休闲度假')
-  const hasSports = preferences.includes('户外运动')
-
-  const activities = {
-    morning: '参观当地著名景点',
-    afternoon: '继续游览，体验当地文化',
-    evening: '品尝当地美食，休闲漫步'
-  }
-
-  // 根据偏好调整活动
-  if (hasHistory) {
-    activities.morning = '参观历史古迹和博物馆'
-  } else if (hasNature) {
-    activities.morning = '游览自然景观和公园'
-  } else if (hasThemePark) {
-    activities.morning = '前往主题乐园游玩'
-  }
-
-  if (hasCulture) {
-    activities.afternoon = '体验当地文化活动和传统手工艺'
-  } else if (hasShopping) {
-    activities.afternoon = '逛街购物，探索当地商业区'
-  } else if (hasSports) {
-    activities.afternoon = '参与户外运动活动'
-  }
-
-  if (hasFood) {
-    activities.evening = '寻找当地特色美食，品尝街头小吃'
-  } else if (hasRelax) {
-    activities.evening = '在酒店或度假村放松休息'
-  }
-
-  return activities
-}
+});

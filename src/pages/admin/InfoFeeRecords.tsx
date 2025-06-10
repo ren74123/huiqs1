@@ -152,7 +152,6 @@ export function InfoFeeRecords() {
           user:profiles!credit_transactions_user_id_fkey (
             full_name,
             phone,
-            username,
             email
           )
         `)
@@ -231,7 +230,6 @@ export function InfoFeeRecords() {
         transaction.user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.user?.phone?.includes(searchTerm) ||
         transaction.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(transaction.user?.username).includes(String(searchTerm)) ||
         transaction.remark?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }

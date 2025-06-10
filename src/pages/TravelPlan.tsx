@@ -170,7 +170,36 @@ export function TravelPlanPage() {
               });
 
               if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
+                const errorText = await response.text();
+                let errorMessage = `API request failed with status ${response.status}`;
+                
+                // Try to parse error response for more details
+                try {
+                  const errorData = JSON.parse(errorText);
+                  if (errorData.error) {
+                    errorMessage = errorData.error;
+                  }
+                } catch {
+                  // If parsing fails, use the raw text if it's meaningful
+                  if (errorText && errorText.length < 200) {
+                    errorMessage = errorText;
+                  }
+                }
+                
+                // Provide specific error messages for common issues
+                if (response.status === 400) {
+                  errorMessage = 'AI服务配置错误，请联系客服处理';
+                } else if (response.status === 401) {
+                  errorMessage = '身份验证失败，请重新登录';
+                } else if (response.status === 403) {
+                  errorMessage = '权限不足，请联系客服';
+                } else if (response.status === 429) {
+                  errorMessage = '请求过于频繁，请稍后再试';
+                } else if (response.status >= 500) {
+                  errorMessage = 'AI服务暂时不可用，请稍后重试';
+                }
+                
+                throw new Error(errorMessage);
               }
 
               const responseData = await response.json();
@@ -194,7 +223,7 @@ export function TravelPlanPage() {
                 success = true;
                 resetCircuitBreaker();
               } else {
-                throw new Error('Invalid response from AI service');
+                throw new Error('AI服务返回的内容格式不正确，请重试');
               }
             } catch (err) {
               retryCount++;
@@ -205,18 +234,24 @@ export function TravelPlanPage() {
                 throw err;
               }
               
-              // Wait before retrying
+              // Wait before retrying with exponential backoff
               await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, retryCount - 1)));
             }
           }
         } catch (error) {
           console.error('Error in background plan generation:', error);
           
+          let errorMessage = '生成行程时出现未知错误，请稍后重试';
+          
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+          
           // Update plan with error message
           await supabase
             .from('travel_plan_logs')
             .update({ 
-              plan_text: `生成行程时出现错误: ${error instanceof Error ? error.message : '请稍后重试'}`,
+              plan_text: `生成行程失败: ${errorMessage}\n\n请返回重新生成或联系客服获取帮助。`,
               poi_list: []
             })
             .eq('id', planId);

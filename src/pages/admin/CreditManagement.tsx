@@ -60,7 +60,18 @@ export function CreditManagement() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        // Parse the error response to get specific error details
+        let errorMessage = 'Failed to fetch users';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (parseError) {
+          // If we can't parse the response, use the status text
+          errorMessage = `Failed to fetch users: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const { users: authUsers } = await response.json();
@@ -72,7 +83,7 @@ export function CreditManagement() {
         .in('id', authUsers.map(u => u.id));
 
       if (profilesError) throw profilesError;
-
+      
       // Combine auth users with their profiles
       const formattedResults = authUsers.map(authUser => {
         const profile = profiles?.find(p => p.id === authUser.id) || {
@@ -90,9 +101,17 @@ export function CreditManagement() {
       setSearchResults(formattedResults);
     } catch (error) {
       console.error('Error searching users:', error);
-      setError('搜索用户失败，请重试');
+      // Display the specific error message from the server
+      setError(error instanceof Error ? error.message : '搜索用户失败，请重试');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Add a function to handle search when pressing Enter
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
     }
   };
 
@@ -194,6 +213,7 @@ export function CreditManagement() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   placeholder="搜索用户（邮箱、昵称或手机号）"
                   className="pl-10 w-full rounded-lg border border-gray-300 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#F52E6B] focus:border-transparent"
                 />

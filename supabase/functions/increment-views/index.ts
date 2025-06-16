@@ -13,35 +13,40 @@ serve(async (req) => {
 
   try {
     const { package_id } = await req.json();
+    if (!package_id) throw new Error("Missing package_id");
 
-    // Initialize Supabase client
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Increment views counter
-    const { error } = await supabaseClient
-      .from('travel_packages')
-      .update({ views: supabaseClient.sql`views + 1` })
-      .eq('id', package_id);
+    // 先查询当前 views
+    const { data: pkg, error: fetchError } = await supabaseClient
+      .from("travel_packages")
+      .select("views")
+      .eq("id", package_id)
+      .single();
 
-    if (error) throw error;
+    if (fetchError) throw fetchError;
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
-      }
-    );
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400
-      }
-    );
+    const currentViews = pkg?.views || 0;
+
+    // 然后更新 views + 1
+    const { error: updateError } = await supabaseClient
+      .from("travel_packages")
+      .update({ views: currentViews + 1 })
+      .eq("id", package_id);
+
+    if (updateError) throw updateError;
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200
+    });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400
+    });
   }
 });

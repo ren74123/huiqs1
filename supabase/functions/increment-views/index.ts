@@ -20,7 +20,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // 先查询当前 views
+    // 查询当前 views
     const { data: pkg, error: fetchError } = await supabaseClient
       .from("travel_packages")
       .select("views")
@@ -31,7 +31,7 @@ serve(async (req) => {
 
     const currentViews = pkg?.views || 0;
 
-    // 然后更新 views + 1
+    // 更新 views + 1
     const { error: updateError } = await supabaseClient
       .from("travel_packages")
       .update({ views: currentViews + 1 })

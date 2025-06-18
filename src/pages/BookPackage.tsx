@@ -55,9 +55,10 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/web
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 function generateOrderNumber() {
-  const timestamp = new Date().getTime();
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `ORD${timestamp}${random}`;
+  const now = new Date();
+  const timestamp = now.getTime().toString().padEnd(14, '0'); // 14位数字
+  const randomPart = Math.random().toString(36).substring(2, 10); // 8位 [a-z0-9]
+  return `ALI${timestamp}_${randomPart}`;
 }
 
 export function BookPackage() {

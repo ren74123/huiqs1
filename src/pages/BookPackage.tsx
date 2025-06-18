@@ -59,9 +59,10 @@ function generateOrderNumber() {
   const timestamp = now.getTime().toString().padEnd(14, '0'); // 14位数字
   const random = Math.random().toString(36).slice(2, 10).toLowerCase(); // 8位小写 a-z0-9
   const orderNumber = `ALI${timestamp}_${random}`;
-  console.log('🧾 生成的 order_number =', orderNumber); // ✅ 现在才定义好了
+  console.log('🧾 生成订单号 =', orderNumber);
   return orderNumber;
 }
+
 
 
 export function BookPackage() {

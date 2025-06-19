@@ -55,14 +55,14 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/web
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 function generateOrderNumber() {
-  console.log('✅ 实际插入的 order_number:', orderNumber);
   const now = new Date();
   const timestamp = now.getTime().toString().padEnd(14, '0'); // 14位数字
   const random = Math.random().toString(36).slice(2, 10).toLowerCase(); // 8位 [a-z0-9]
-  const orderNumber = `ALI${timestamp}_${random}`; // ✅ 定义后再使用
-  console.log('🧾 生成订单号 =', orderNumber);        // ✅ 现在才打印
+  const orderNumber = `ALI${timestamp}_${random}`; // ✅ 先定义
+  console.log('🧾 生成订单号 =', orderNumber);        // ✅ 再打印
   return orderNumber;
 }
+
 
 
 

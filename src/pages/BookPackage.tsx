@@ -54,12 +54,16 @@ const NAME_REGEX = /^[\u4e00-\u9fa5]{2,}$/;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
-function generateOrderNumber() {
-  const timestamp = Date.now(); // 13 位时间戳
-  const random = Math.floor(Math.random() * 90 + 10); // 10-99 的随机两位数
-  const orderNumber = 'ORD' + timestamp + random;
-  console.log('🧾 生成订单号 =', orderNumber);
-  return orderNumber;
+export function generateOrderNumber(): string {
+  const timestamp = Date.now().toString(); // 一般是13位
+  const padding = '0'.repeat(16 - timestamp.length); // 如果时间戳不足16位，用0填充
+  const random = Math.floor(Math.random() * Math.pow(10, 16 - timestamp.length))
+    .toString()
+    .padStart(16 - timestamp.length, '0');
+
+  const finalNumber = 'ORD' + timestamp + random; // 确保总长度是 ORD+16位数字
+  console.log('🧾 生成订单号:', finalNumber);
+  return finalNumber;
 }
 
 

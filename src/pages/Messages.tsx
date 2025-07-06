@@ -333,7 +333,7 @@ export function Messages() {
               }`}
             >
               <Bell className="h-4 w-4 mr-2" />
-              <span>系统通知</span>
+              <span>系统通知1</span>
             </button>
             <button
               onClick={() => setActiveTab('all')}

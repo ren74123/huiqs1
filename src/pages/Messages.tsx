@@ -333,7 +333,7 @@ export function Messages() {
               }`}
             >
               <Bell className="h-4 w-4 mr-2" />
-              <span>系统通知2</span>
+              <span>系统通知</span>
             </button>
             <button
               onClick={() => setActiveTab('all')}
@@ -344,7 +344,7 @@ export function Messages() {
               }`}
             >
               <MessageSquare className="h-4 w-4 mr-2" />
-              <span>全部消息</span>
+              <span>全部消息1</span>
             </button>
           </nav>
         </div>

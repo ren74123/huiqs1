@@ -321,7 +321,7 @@ export function Messages() {
           >
             <div className="flex items-center justify-center">
               <Bell className="h-4 w-4 mr-2" />
-              <span>系统通知1</span>
+              <span>系统通知12</span>
             </div>
           </button>
           <button

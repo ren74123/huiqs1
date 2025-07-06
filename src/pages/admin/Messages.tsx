@@ -20,11 +20,11 @@ interface Message {
     full_name: string;
     avatar_url: string;
     user_role: string;
-  };
+  } | null;
   receiver: {
     full_name: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 export function AdminMessages() {
@@ -220,15 +220,15 @@ export function AdminMessages() {
                 >
                   <div className="flex items-start space-x-4">
                     <img
-                      src={message.sender.avatar_url || 'https://via.placeholder.com/40'}
-                      alt={message.sender.full_name}
+                      src={message.sender?.avatar_url || 'https://via.placeholder.com/40'}
+                      alt={message.sender?.full_name || 'Unknown User'}
                       className="w-10 h-10 rounded-full"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center">
                           <h3 className="text-sm font-medium text-gray-900">
-                            {message.sender.full_name}
+                            {message.sender?.full_name || 'Unknown User'}
                           </h3>
                           <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
                             message.type === 'system'

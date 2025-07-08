@@ -165,7 +165,7 @@ export function UserFavorites() {
                   ¥{favorite.travel_packages.price}
                 </div>
                 <div className="text-sm text-gray-500">
-                  {favorite.travel_packages.views} 浏览1 · {favorite.travel_packages.orders} 订单
+                  {favorite.travel_packages.views} 浏览 · {favorite.travel_packages.orders} 订单
                 </div>
               </div>
             </div>

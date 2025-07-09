@@ -85,7 +85,7 @@ export function PlanCard({
             onClick={onView}
             className="bg-[#F52E6B] text-white py-2 px-4 rounded-lg hover:bg-[#FE6587] transition-colors"
           >
-            查看详情1
+            查看详情
           </button>
         </div>
       </div>

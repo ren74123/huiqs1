@@ -105,13 +105,23 @@ export function AgentDetail() {
       const urls = [];
       for (const path of imagePaths) {
         try {
-          // 直接使用路径获取签名URL
-          const signedUrl = await getSignedFile('licenses', path);
+          // 从完整URL中提取文件路径
+          let filePath = path;
+          if (path.includes('/storage/v1/object/public/licenses/')) {
+            // 如果是完整的公共URL，提取文件路径部分
+            const urlParts = path.split('/storage/v1/object/public/licenses/');
+            if (urlParts.length > 1) {
+              filePath = urlParts[1];
+            }
+          }
+          
+          console.log('[debug] 处理后的文件路径:', filePath);
+          const signedUrl = await getSignedFile('licenses', filePath);
           if (signedUrl) {
             urls.push(signedUrl);
           }
         } catch (err) {
-          console.error(`获取图片 ${path} 签名URL失败:`, err);
+          console.error(`获取图片 ${filePath} 签名URL失败:`, err);
         }
       }
       

@@ -38,7 +38,7 @@ const CREDIT_PACKAGES: CreditPackage[] = [
   },
   {
     id: 'package2',
-    name: '套餐二',
+    name: '套餐二1',
     price: 30,
     credits: 400,
     usageCount: 8,

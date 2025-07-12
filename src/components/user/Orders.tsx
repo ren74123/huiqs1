@@ -82,7 +82,7 @@ export function Orders() {
 
       // Add timeout to the fetch operation
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 10000);
+        setTimeout(() => reject(new Error('Request timeout')), 30000);
       });
 
       const fetchPromise = supabase

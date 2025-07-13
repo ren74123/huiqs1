@@ -84,7 +84,8 @@ export function MyPackages() {
             .from('travel_packages')
             .update({ 
               is_discounted: false,
-              price: pkg.original_price
+              price: pkg.original_price,
+              discount_expires_at: null
             })
             .eq('id', pkg.id);
             
@@ -97,7 +98,8 @@ export function MyPackages() {
           return { 
             ...pkg, 
             is_discounted: false,
-            price: pkg.original_price
+            price: pkg.original_price,
+            discount_expires_at: null
           };
         }
         

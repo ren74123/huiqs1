@@ -89,7 +89,7 @@ export function MyPackages() {
             .update({ 
               is_discounted: false,
               price: pkg.original_price,
-              discount_expires_at: pastDateString,
+              discount_expires_at: null,
               discount_price: null
             })
             .eq('id', pkg.id);
@@ -104,7 +104,7 @@ export function MyPackages() {
             ...pkg, 
             is_discounted: false,
             price: pkg.original_price,
-            discount_expires_at: pastDateString,
+            discount_expires_at: null,
             discount_price: null
           };
         }

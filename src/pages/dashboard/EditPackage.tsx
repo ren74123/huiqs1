@@ -246,7 +246,7 @@ export function EditPackage() {
         updateData.original_price = parseFloat(formData.originalPrice);
         updateData.price = parseFloat(formData.originalPrice);
         updateData.discount_price = null;
-        updateData.discount_expires_at = new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0];
+        updateData.discount_expires_at = null;
       }
 
       console.log('[debug] EditPackage - 更新套餐数据:', updateData);

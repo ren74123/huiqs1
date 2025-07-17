@@ -414,14 +414,14 @@ export function AgentOrders() {
         <div key={order.id} className="border rounded-lg p-4">
           <div className="flex justify-between">
             <div>
-              <h3 className="font-medium">{order.travel_packages.title}</h3>
+              <h3 className="font-medium">{order.travel_packages?.title || '未知套餐'}</h3>
               <div className="text-sm text-gray-500 mt-1 flex space-x-2">
                 <MapPin className="h-4 w-4" />
-                <span>{order.travel_packages.destination}</span>
+                <span>{order.travel_packages?.destination || '未知目的地'}</span>
               </div>
               <div className="text-sm text-gray-500 flex space-x-2">
                 <Clock className="h-4 w-4" />
-                <span>{order.travel_packages.duration} 天</span>
+                <span>{order.travel_packages?.duration || 0} 天</span>
               </div>
               <div className="text-sm text-gray-500 flex space-x-2">
                 <Calendar className="h-4 w-4" />
@@ -429,7 +429,7 @@ export function AgentOrders() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-lg text-[#F52E6B] font-semibold">¥{order.travel_packages.price}</div>
+              <div className="text-lg text-[#F52E6B] font-semibold">¥{order.travel_packages?.price || 0}</div>
               <div className="mt-2">
                 {getStatusBadge(order.status)}
               </div>

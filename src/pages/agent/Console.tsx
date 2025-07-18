@@ -47,14 +47,33 @@ export function AgentConsole() {
       setError(null);
       
       // Fetch pending orders count
-      const { data: ordersData, error: ordersError } = await supabase
+      const { count: ordersCount, error: ordersError } = await supabase
         .from('orders')
-        .select('id, travel_packages!inner(agent_id)')
+        .select('*', { count: 'exact', head: true })
         .eq('travel_packages.agent_id', user?.id)
-        .eq('contract_status', 'pending');
+        .in('status', ['pending', 'contacted']);
 
       if (ordersError) throw ordersError;
-      setPendingOrders(ordersData?.length || 0);
+      setPendingOrders(ordersCount || 0);
+
+      // Alternative query if the above doesn't work
+      if (ordersCount === 0) {
+        const { data: ordersData, error: ordersError2 } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          status,
+          travel_packages!inner(
+            agent_id
+          )
+        `)
+        .eq('travel_packages.agent_id', user?.id)
+        .in('status', ['pending', 'contacted']);
+
+        if (!ordersError2 && ordersData) {
+          setPendingOrders(ordersData.length);
+        }
+      }
 
       // Fetch enterprise orders count
       const { data: enterpriseData, error: enterpriseError } = await supabase

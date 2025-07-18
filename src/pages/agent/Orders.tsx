@@ -73,6 +73,23 @@ export function AgentOrders() {
   async function fetchOrders() {
     try {
       setLoading(true);
+      
+      // First, get the agent's packages to find orders
+      const { data: agentPackages, error: packagesError } = await supabase
+        .from('travel_packages')
+        .select('id')
+        .eq('agent_id', user?.id);
+
+      if (packagesError) throw packagesError;
+      
+      if (!agentPackages || agentPackages.length === 0) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+
+      const packageIds = agentPackages.map(pkg => pkg.id);
+
       let query = supabase
         .from('orders')
         .select(`
@@ -86,7 +103,7 @@ export function AgentOrders() {
             image
           )
         `)
-        .eq('travel_packages.agent_id', user?.id)
+        .in('package_id', packageIds)
         .order('created_at', { ascending: false });
 
       // Apply status filter if not 'all'

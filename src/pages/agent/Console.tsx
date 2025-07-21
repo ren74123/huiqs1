@@ -49,7 +49,7 @@ export function AgentConsole() {
       // Fetch pending orders count
       const { count: ordersCount, error: ordersError } = await supabase
         .from('orders')
-        .select('*', { count: 'exact', head: true })
+        .select('travel_packages!inner(agent_id)', { count: 'exact', head: true })
         .eq('travel_packages.agent_id', user?.id)
         .in('status', ['pending', 'contacted']);
 

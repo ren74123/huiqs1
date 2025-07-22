@@ -79,10 +79,6 @@ export function MyPackages() {
         
         // Check if discount has expired
         if (pkg.is_discounted && pkg.discount_expires_at && new Date(pkg.discount_expires_at) < new Date()) {
-          const pastDate = new Date();
-          pastDate.setDate(pastDate.getDate() - 1);
-          const pastDateString = pastDate.toISOString().split('T')[0];
-          
           // Update the package to remove discount
           const { error: updateError } = await supabase
             .from('travel_packages')

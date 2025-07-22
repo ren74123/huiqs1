@@ -243,8 +243,8 @@ export function PublishPackage() {
         packageData.is_international = false;
         packageData.original_price = parseFloat(formData.originalPrice);
         packageData.price = parseFloat(formData.originalPrice);
+        packageData.discount_expires_at = null;
       }
-       packageData.discount_expires_at = new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0];
      
       // Create package
       const { error: insertError } = await supabase

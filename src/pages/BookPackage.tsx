@@ -299,7 +299,7 @@ export function BookPackage() {
           package_id: pkg.id,
           contact_name: formData.contact_name,
           contact_phone: formData.contact_phone,
-          id_card: formData.id_card ? 'pending_upload' : '',
+          id_card: formData.id_card ? 'pending_upload' : null,
           travel_date: formData.travel_date,
           status: 'pending',
           order_number: orderNumber

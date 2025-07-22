@@ -14,6 +14,7 @@ interface Order {
   status: 'pending' | 'contacted' | 'rejected';
   created_at: string;
   contract_status?: 'pending' | 'confirmed' | 'rejected';
+  id_card?: string;
   travel_packages: {
     id: string;
     title: string;
@@ -541,6 +542,27 @@ export function Orders() {
                         <p>{message.message}</p>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* ID Card Display */}
+              {order.id_card && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">身份证照片</h4>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <img
+                      src={order.id_card}
+                      alt="身份证照片"
+                      className="w-full max-w-xs h-auto rounded-lg"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'text-gray-500 text-sm';
+                        errorDiv.textContent = '身份证照片加载失败';
+                        e.currentTarget.parentNode?.appendChild(errorDiv);
+                      }}
+                    />
                   </div>
                 </div>
               )}

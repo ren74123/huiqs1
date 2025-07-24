@@ -200,7 +200,7 @@ export function InfoFeePaymentForm({ orderId, onSuccess, className = '' }: InfoF
       <div className={`bg-yellow-50 p-4 rounded-lg ${className}`}>
         <div className="flex items-center">
           <AlertCircle className="h-5 w-5 text-yellow-500 mr-2" />
-          <p className="text-yellow-700">请从订单管理页面选择需要支付信息费的订单</p>
+          <p className="text-yellow-700">请从订单管理页面选择需要支付信息费的订单1</p>
         </div>
       </div>
     );

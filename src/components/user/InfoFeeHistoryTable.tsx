@@ -142,7 +142,7 @@ export function InfoFeeHistoryTable({ className = '' }: InfoFeeHistoryTableProps
         <div className="bg-gradient-to-r from-[#F52E6B] to-[#FF6B6B] p-6 text-white">
           <div className="flex items-center mb-2">
             <Coins className="h-6 w-6 mr-2" />
-            <h2 className="text-xl font-bold">信息费总计</h2>
+            <h2 className="text-xl font-bold">信息费总计1</h2>
           </div>
           <p className="text-3xl font-bold">¥{totalAmount.toFixed(2)}</p>
           <p className="text-sm opacity-80 mt-1">

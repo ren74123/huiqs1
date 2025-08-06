@@ -338,7 +338,7 @@ export function Messages() {
           >
             <div className="flex items-center justify-center">
               <MessageSquare className="h-4 w-4 mr-2" />
-              <span>全部消息1</span>
+              <span>全部消息3</span>
             </div>
           </button>
         </div>

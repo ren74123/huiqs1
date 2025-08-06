@@ -312,7 +312,7 @@ export function Messages() {
           >
             <div className="flex items-center justify-center">
               <Package className="h-4 w-4 mr-2" />
-              <span>订单消息</span>
+              <span>订单消息2</span>
             </div>
           </button>
           <button

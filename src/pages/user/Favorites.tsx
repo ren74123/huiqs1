@@ -59,7 +59,9 @@ export function UserFavorites() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setFavorites(data || []);
+      // Filter out favorites where travel_packages is null
+      const validFavorites = (data || []).filter(favorite => favorite.travel_packages !== null);
+      setFavorites(validFavorites);
     } catch (error) {
       console.error('Error fetching favorites:', error);
     } finally {

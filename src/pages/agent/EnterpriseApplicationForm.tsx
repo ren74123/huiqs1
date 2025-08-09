@@ -130,35 +130,45 @@ export function EnterpriseApplicationForm({ orderId, onClose, onSuccess }: Enter
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm() || !user || !isValidUUID(orderId)) {
-      return;
-    }
-    
-    setSubmitting(true);
-    
-    try {
-// Upload license images
-const licenseImageUrls: string[] = [];
-for (let i = 0; i < licenseImages.length; i++) {
-  const file = licenseImages[i];
-  const ext = getExt(file);
-  const key = `${orderId}_license_${i + 1}.${ext}`;   // ✅ 补后缀
-  const url = await uploadGeneral(file, 'enterprise_docs', user.id, key);
-  licenseImageUrls.push(url);
-}
+const isValidOrderId = (id: string) => {
+  // 允许 UUID 或者以 qy 开头的企业单号（后面 12~20 位数字可按你实际规则微调）
+  return isValidUUID(id) || /^qy\d{12,20}$/.test(id);
+};
 
-// Upload qualification images
-const qualificationImageUrls: string[] = [];
-for (let i = 0; i < qualificationImages.length; i++) {
-  const file = qualificationImages[i];
-  const ext = getExt(file);
-  const key = `${orderId}_qualification_${i + 1}.${ext}`;   // ✅ 补后缀
-  const url = await uploadGeneral(file, 'enterprise_docs', user.id, key);
-  qualificationImageUrls.push(url);
-}
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  // ✅ 用更宽松的校验替代 isValidUUID(orderId)
+  if (!validateForm() || !user || !isValidOrderId(orderId)) {
+    return;
+  }
+
+  setSubmitting(true);
+
+  try {
+    // Upload license images（保持你的“后面的代码”写法，不做结构性改动）
+    const licenseImageUrls: string[] = [];
+    for (const file of licenseImages) {
+      const url = await uploadFile(
+        file,
+        'enterprise_docs',
+        user.id,
+        { enterprise_order_id: orderId, doc_type: 'license' }
+      );
+      licenseImageUrls.push(url);
+    }
+
+    // Upload qualification images
+    const qualificationImageUrls: string[] = [];
+    for (const file of qualificationImages) {
+      const url = await uploadFile(
+        file,
+        'enterprise_docs',
+        user.id,
+        { enterprise_order_id: orderId, doc_type: 'qualification' }
+      );
+      qualificationImageUrls.push(url);
+    }
       
       // Submit application
       const { error: applicationError } = await supabase

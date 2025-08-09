@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/auth';
 import { uploadGeneral } from '../../utils/fileUpload';
 import { isValidUUID } from '../../utils/validation';
+import { uploadFile } from '../../api/storageRest';
 
 interface EnterpriseApplicationFormProps {
   orderId: string;

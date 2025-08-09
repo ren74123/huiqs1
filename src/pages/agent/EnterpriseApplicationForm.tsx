@@ -143,7 +143,7 @@ export function EnterpriseApplicationForm({ orderId, onClose, onSuccess }: Enter
       // Upload license images
       const licenseImageUrls: string[] = [];
       for (const file of licenseImages) {
-        const url = await uploadFile(
+        const url = await uploadGeneral(
           file, 
           'enterprise_docs', 
           user.id, 
@@ -155,7 +155,7 @@ export function EnterpriseApplicationForm({ orderId, onClose, onSuccess }: Enter
       // Upload qualification images
       const qualificationImageUrls: string[] = [];
       for (const file of qualificationImages) {
-        const url = await uploadFile(
+        const url = await uploadGeneral(
           file, 
           'enterprise_docs', 
           user.id, 

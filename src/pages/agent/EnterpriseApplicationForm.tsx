@@ -142,24 +142,26 @@ export function EnterpriseApplicationForm({ orderId, onClose, onSuccess }: Enter
     try {
       // Upload license images
       const licenseImageUrls: string[] = [];
-      for (const file of licenseImages) {
+      for (let i = 0; i < licenseImages.length; i++) {
+        const file = licenseImages[i];
         const url = await uploadGeneral(
           file, 
           'enterprise_docs', 
-          user.id, 
-          { enterprise_order_id: orderId, doc_type: 'license' }
+          user.id,
+          `${orderId}_license_${i + 1}`
         );
         licenseImageUrls.push(url);
       }
       
       // Upload qualification images
       const qualificationImageUrls: string[] = [];
-      for (const file of qualificationImages) {
+      for (let i = 0; i < qualificationImages.length; i++) {
+        const file = qualificationImages[i];
         const url = await uploadGeneral(
           file, 
           'enterprise_docs', 
-          user.id, 
-          { enterprise_order_id: orderId, doc_type: 'qualification' }
+          user.id,
+          `${orderId}_qualification_${i + 1}`
         );
         qualificationImageUrls.push(url);
       }

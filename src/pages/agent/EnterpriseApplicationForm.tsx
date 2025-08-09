@@ -140,29 +140,25 @@ export function EnterpriseApplicationForm({ orderId, onClose, onSuccess }: Enter
     setSubmitting(true);
     
     try {
-  // Upload license images
-      const licenseImageUrls: string[] = [];
-      for (const file of licenseImages) {
-        const url = await uploadFile(
-          file, 
-          'enterprise_docs', 
-          user.id, 
-          { enterprise_order_id: orderId, doc_type: 'license' }
-        );
-        licenseImageUrls.push(url);
-      }
-      
-      // Upload qualification images
-      const qualificationImageUrls: string[] = [];
-      for (const file of qualificationImages) {
-        const url = await uploadFile(
-          file, 
-          'enterprise_docs', 
-          user.id, 
-          { enterprise_order_id: orderId, doc_type: 'qualification' }
-        );
-        qualificationImageUrls.push(url);
-      }
+// Upload license images
+const licenseImageUrls: string[] = [];
+for (let i = 0; i < licenseImages.length; i++) {
+  const file = licenseImages[i];
+  const ext = getExt(file);
+  const key = `${orderId}_license_${i + 1}.${ext}`;   // ✅ 补后缀
+  const url = await uploadGeneral(file, 'enterprise_docs', user.id, key);
+  licenseImageUrls.push(url);
+}
+
+// Upload qualification images
+const qualificationImageUrls: string[] = [];
+for (let i = 0; i < qualificationImages.length; i++) {
+  const file = qualificationImages[i];
+  const ext = getExt(file);
+  const key = `${orderId}_qualification_${i + 1}.${ext}`;   // ✅ 补后缀
+  const url = await uploadGeneral(file, 'enterprise_docs', user.id, key);
+  qualificationImageUrls.push(url);
+}
       
       // Submit application
       const { error: applicationError } = await supabase

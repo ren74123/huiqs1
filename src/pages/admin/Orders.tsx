@@ -56,6 +56,12 @@ export function AdminOrders() {
     checkAdminAccess();
   }, [user, navigate]);
 
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    }
+  }, [user, statusFilter, contractStatusFilter, dateRange]);
+
   async function checkAdminAccess() {
     try {
       const { data: profile, error } = await supabase
@@ -69,8 +75,7 @@ export function AdminOrders() {
       if (profile?.user_role !== 'admin') {
         navigate('/');
       } else {
-        // Only fetch orders if user is admin
-await fetchOrders();
+        // Initial fetch will be handled by the useEffect above
       }
     } catch (error) {
       console.error('Error checking admin access:', error);
